@@ -4,6 +4,7 @@ import(
     "log"
     "strconv"
     "errors"
+    "github.com/thelmholtz/astroweather/planets"
 )
 
 func Day(day string) (string, error) {
@@ -24,21 +25,30 @@ func Day(day string) (string, error) {
         case isRaining(key):
             log.Print("It's raining")
             return "lluvia", nil
-        case isDrought(key):
-            log.Print("It's drougth")
-            return "sequia", nil
         case isOptimal(key):
             log.Print("It's optimal")
             return "optimal", nil
+        case isDry(key):
+            log.Print("It's dry")
+            return "sequia", nil
         default:
-            log.Print("It's default")
+            log.Print("It's normal")
             return "normal", nil
         }
 }
 
-func isRaining(day int) bool { return false }
+//TODO Not sure this funcs are necesary...
 
-func isDrought(day int) bool { return true }
+func isRaining(day int) bool {
+    return false
+}
 
-func isOptimal(day int) bool { return false }
+func isDry(day int) bool {
+    return planets.RadiallyAligned(day)
+}
+
+
+func isOptimal(day int) bool {
+    return planets.Aligned(day)
+}
 

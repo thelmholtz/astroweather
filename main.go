@@ -23,7 +23,7 @@ func Weather(w http.ResponseWriter, r *http.Request) {
     value, err := weather.Day(day)
     if err != nil {
         log.Print("Error retrieving weather by day", err)
-        w.Write([]byte("{\n\t\"error\": \"" + err.Error() + "\"\n\t}"))
+        w.Write([]byte("{\n\t\"error\": \"" + err.Error() + "\"\n}"))
         return
     }
 
