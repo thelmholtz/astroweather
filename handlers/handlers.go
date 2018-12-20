@@ -19,6 +19,7 @@ func Weather(w http.ResponseWriter, r *http.Request) {
 
 	if err := day.Forecast(); err != nil {
 		log.Print(err)
+		w.WriteHeader(http.StatusBadRequest)
 		enc.Encode(err) //err type should be json encodable to allow this; see github.com/thelmholtz/except
 		return
 	}

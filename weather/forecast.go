@@ -30,14 +30,14 @@ func (day *Day) Forecast() except.E {
 	case key < 0:
 		err := except.New("VALUE", "El dia tiene que ser positivo")
 		return err
-	case isRaining(key):
-		day.Weather = "lluvia"
-		return nil
-	case isOptimal(key):
-		day.Weather = "optimal"
-		return nil
 	case isDry(key):
 		day.Weather = "sequia"
+		return nil
+	case isOptimal(key):
+		day.Weather = "optimo"
+		return nil
+	case isRaining(key):
+		day.Weather = "lluvia"
 		return nil
 	default:
 		day.Weather = "normal"

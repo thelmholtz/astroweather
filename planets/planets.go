@@ -58,29 +58,10 @@ func Aligned(day int) bool {
 	planets[1] = Betasoide
 	planets[2] = Vulcano
 
-	//Some tolerance needs to be agreed upon to allow floating point comparisons.
-	//A council of the best Betasoid astronomers and Vulcani metheorologists has agreed upon 0.1 as a close enough value.
-	tolerance := 0.1
-
 	p1, p2, p3 := planets[0].LocationCartesian(day), planets[1].LocationCartesian(day), planets[2].LocationCartesian(day)
 
-	m1 := (p1.Y - p2.Y) / (p1.X - p2.X)
-	m2 := (p1.Y - p3.Y) / (p1.X - p3.X)
+	return p1.IsCollinearTo(p2, p3)
 
-	switch {
-	case isInfinite(m1) && isInfinite(m2):
-		return true
-	case isInfinite(m1) || isInfinite(m2):
-		return false
-	case m1 == m2:
-		return true
-	default:
-		dispersion := math.Abs(m1 / m2)
-		if dispersion > 1.0-tolerance && dispersion < 1.0+tolerance {
-			return true
-		}
-		return false
-	}
 }
 
 //Helpers
