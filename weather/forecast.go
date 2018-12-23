@@ -8,18 +8,16 @@ import (
 	"github.com/thelmholtz/except"
 )
 
-//Day represents a day-weather value pair and it's json mapping.
-type Day struct {
-	D       string `json:"dia"`
-	Weather string `json:"clima"`
+//Forecast represents a day-weather value pair and it's json mapping.
+type Forecast struct {
+	D       string `bson:"day" json:"dia"`
+	Weather string `bson:"weather" json:"clima"`
 }
 
-//Forecast sets the Weather for this Day with an accurate prediction. Overwrites any previous value.
-func (day *Day) Forecast() except.E {
+//Predict sets the Weather for this Day with an accurate prediction. Overwrites any previous value.
+func (forecast *Forecast) Predict() except.E {
 
-	log.Print("Queried weather for day: " + day.D)
-
-	key, err := strconv.Atoi(day.D)
+	key, err := strconv.Atoi(forecast.D)
 
 	if err != nil {
 		log.Print(err)
@@ -31,23 +29,23 @@ func (day *Day) Forecast() except.E {
 		err := except.New("VALUE", "El dia tiene que ser positivo")
 		return err
 	case isDry(key):
-		day.Weather = "sequia"
+		forecast.Weather = "sequia"
 		return nil
 	case isOptimal(key):
-		day.Weather = "optimo"
+		forecast.Weather = "optimo"
 		return nil
 	case isRaining(key):
-		day.Weather = "lluvia"
+		forecast.Weather = "lluvia"
 		return nil
 	default:
-		day.Weather = "normal"
+		forecast.Weather = "normal"
 		return nil
 	}
 }
 
 //Helpers
 func isRaining(day int) bool {
-	return false
+	return planets.SunInsideTriangle(day)
 }
 
 func isDry(day int) bool {

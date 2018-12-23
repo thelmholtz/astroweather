@@ -25,5 +25,7 @@ func (app *App) Initialize() {
 }
 
 func (app *App) initializeRoutes() {
-	app.Router.Path("/clima").Queries("dia", "{dia}").HandlerFunc(handlers.Weather)
+	app.Router.Path("/predict").Methods("GET", "POST").HandlerFunc(handlers.Predict) //TODO Should only be POST but GET allows for easy testing with the browser
+	app.Router.Path("/clima").Queries("dia", "{dia}").HandlerFunc(handlers.Forecast)
+
 }
