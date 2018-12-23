@@ -54,7 +54,7 @@ func SunInsideTriangle(day int) bool {
 	planets := PlanetarySystem()
 
 	if len(planets) != 3 {
-		panic("Either we have new neighbours and this method should be reimplemented for n-sided polygoons; or something went TERRIBLY wrong with our solar system")
+		panic("Either we have new neighbours and this method should be reimplemented for n-sided polygoons; or something went TERRIBLY wrong with our solar system and we should take a minute of mourning")
 	}
 
 	locations := locations(planets, day)
