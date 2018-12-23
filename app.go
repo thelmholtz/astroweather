@@ -68,22 +68,24 @@ func (app *App) GetForecast(w http.ResponseWriter, r *http.Request) {
 	c := session.DB("test").C("inventory")
 
 	var forecast = new(model.Forecast)
+
 	log.Print("Querying day: ", day)
 	if err := c.Find(bson.M{"day": day}).One(forecast); err != nil {
-		log.Fatal(err)
-	}
-	/*
-		forecast := model.Forecast{D: r.FormValue("dia"), Weather: "normal"}
 
-		log.Print("Queried weather for day: " + forecast.D)
+		//If the query fails, we fallback to making the prediction numerically.
+		//If the reason the query failed is the record was not found, we could just insert the record after replying to keep it cached and avoid future computation.
+		forecast.D = day
+
+		log.Print("Queried failed for day: " + forecast.D)
 
 		if err := forecast.Predict(); err != nil {
 			log.Print(err)
 			w.WriteHeader(http.StatusBadRequest)
-			enc.Encode(err) //err type should be json encodable to allow this; see github.com/thelmholtz/except
+			enc.Encode(err)
 			return
 		}
-	*/
+	}
+
 	enc.Encode(forecast)
 }
 
