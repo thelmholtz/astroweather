@@ -79,6 +79,7 @@ func GenerateForecast(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		enc.Encode(except.New("VERB", "Method not allowed"))
+		return
 	}
 
 	forecasts := make([]model.Forecast, 360) //Simula el clima para los proximos 10 años Ferengienses (duran 360 dias)
