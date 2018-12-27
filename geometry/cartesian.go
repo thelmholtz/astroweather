@@ -46,7 +46,7 @@ func (p Point) InsidePolygon(vertices ...Point) bool {
 	offsets := make([]float64, len(vertices))
 
 	for i := range vertices {
-		if i < len(vertices)-1 {
+		if i+1 < len(vertices) {
 			offsets[i] = edgeOffset(p, vertices[i], vertices[i+1])
 		} else {
 			//Edge joining last point to starting point

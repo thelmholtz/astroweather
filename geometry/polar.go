@@ -12,7 +12,7 @@ type Polar struct {
 
 //Point returns the cartesian coordinates (float64) representation of a Polar (int) point
 func (p Polar) Point() Point {
-	return Point{float64(p.R) * math.Cos(180.0/(math.Pi*float64(p.A))), float64(p.R) * math.Sin(180.0/(math.Pi*float64(p.A)))}
+	return Point{float64(p.R) * math.Cos((math.Pi*float64(p.A))/180), float64(p.R) * math.Sin((float64(p.A)*math.Pi)/180)}
 }
 
 //AxisAngle returns the angle normalized between 0 - 180 degrees

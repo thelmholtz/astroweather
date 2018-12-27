@@ -61,12 +61,13 @@ func SunInsideTriangle(day int) bool {
 
 	origin := geometry.Point{X: 0.0, Y: 0.0}
 
-	return origin.InsidePolygon(locations...)
+	ret := origin.InsidePolygon(locations...)
+	return ret
 }
 
 //location returns a planet location's Polar coordinates. They are assumed to be on position w=0 on day 0.
 func (planet Planet) locationRadial(day int) geometry.Polar {
-	return geometry.Polar{A: planet.W * day % 360, R: planet.R}
+	return geometry.Polar{A: planet.W * day, R: planet.R}
 }
 
 //locationCartesian returns a planet location's as a Point (cartesian coordinates).

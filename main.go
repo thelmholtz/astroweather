@@ -26,16 +26,6 @@ func Index(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("This is the home screen. Try issuing a GET to /predict to generate predictions, or /clima?dia={int} to get the prediction for a given day"))
 }
 
-//normalizeDays takes a day from minint to maxint and returns it's absolute modulo 360 (0 to 359); which is the amount of days in a Ferengian year.
-//As the weather is yearly-periodical for the whole planetary system, normalization allows us to store a small sample of data and yet predict the weather for a theoretically infinite range.
-//For instance, negative values can be queried with consistent results.
-func normalizeDay(i int) int {
-	for i < 0 {
-		return (360 + (i % 360)) % 360 //Go's implementation of modulo yields negative numbers if the operand is negative; we need to normalize this again after shifting them from the range (-359, 0) to (0, 359)
-	}
-	return i % 360
-}
-
 //GetForecast is the handler function for `clima` endpoint.
 func GetForecast(w http.ResponseWriter, r *http.Request) {
 
@@ -57,8 +47,7 @@ func GetForecast(w http.ResponseWriter, r *http.Request) {
 
 	if _, err := q.GetAll(ctx, &forecasts); err != nil {
 
-		//If the query fails, either becacuse the value was not found, or because it's out of the simulated range of 10 years, we fallback to making the prediction numerically.
-		//If the reason the query failed is the record was not found, we could just insert the record after replying to keep it cached and avoid future computation.
+		//If the query fails, either because there's no records or no infrastructure, we fallback to calculating each day per request.
 		f := new(model.Forecast)
 		f.Day = day
 
@@ -70,6 +59,9 @@ func GetForecast(w http.ResponseWriter, r *http.Request) {
 			enc.Encode(err)
 			return
 		}
+
+		forecasts := make([]model.Forecast, 1)
+		forecasts[0] = *f
 	}
 	log.Infof(ctx, "Forecasts: %v", forecasts)
 
@@ -83,6 +75,11 @@ func GenerateForecast(w http.ResponseWriter, r *http.Request) {
 
 	ctx := appengine.NewContext(r)
 	enc := json.NewEncoder(w)
+
+	if r.Method != http.MethodPost {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		enc.Encode(except.New("VERB", "Method not allowed"))
+	}
 
 	forecasts := make([]model.Forecast, 360) //Simula el clima para los proximos 10 años Ferengienses (duran 360 dias)
 
@@ -128,4 +125,14 @@ func GenerateForecast(w http.ResponseWriter, r *http.Request) {
 
 	log.Infof(ctx, "%v records inserted correctly: %v", len(forecasts), forecasts)
 	enc.Encode(forecasts)
+}
+
+//normalizeDays takes a day from minint to maxint and returns it's absolute modulo 360 (0 to 359); which is the amount of days in a Ferengian year.
+//As the weather is yearly-periodical for the whole planetary system, normalization allows us to store a small sample of data and yet predict the weather for a theoretically infinite range.
+//For instance, negative values can be queried with consistent results.
+func normalizeDay(i int) int {
+	for i < 0 {
+		return (360 + (i % 360)) % 360 //Go's implementation of modulo yields negative numbers if the operand is negative; we need to normalize this again after shifting them from the range (-359, 0) to (0, 359)
+	}
+	return i % 360
 }
