@@ -12,5 +12,5 @@ To run this program, you need a working installation of Go and Gcloud CLI, and a
 
 ## Try it
 
-You can play with [a quick version of this service](https://astroweather.appspot.com) if you rather not go through the hussle.
+You can play with [a quick version of this service](https://astroweather.appspot.com) if you rather not go through the hustle.
 
