@@ -59,24 +59,8 @@ func GetForecast(w http.ResponseWriter, r *http.Request) {
 	log.Infof(ctx, "Getting Forecast")
 
 	if _, err := q.GetAll(ctx, &forecasts); err != nil {
-		/*
-			//If the query fails, either because there's no records or no infrastructure, we fallback to calculating each day per request.
-			f := new(model.Forecast)
-			f.Day = day
 
-			log.Errorf(ctx, "Query failed for day: %v, Error: %v", f.Day, err)
-
-			if err := forecasts[0].Predict(); err != nil {
-				log.Errorf(ctx, "Error making fallback predictions: %v", err)
-				w.WriteHeader(http.StatusBadRequest)
-				enc.Encode(err)
-				return
-			}
-
-			forecasts := make([]model.Forecast, 1)
-			forecasts[0] = *f
-		*/
-		log.Errorf(ctx, "Query blew up %v", err)
+		log.Errorf(ctx, "%v", err)
 		w.WriteHeader(http.StatusBadGateway)
 
 		return
@@ -92,10 +76,12 @@ func GetForecast(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//I couldn't order by day using the gcloud datastore SDK whenever the filter was by weather; so we sort it manually here:
-	sort.Slice(forecasts, func(i, j int) bool { return forecasts[i].Day < forecasts[j].Day })
+	if forecasts != nil {
+		//I couldn't order by day using the gcloud datastore SDK whenever the filter was by weather; so we sort it manually here:
+		sort.Slice(forecasts, func(i, j int) bool { return forecasts[i].Day < forecasts[j].Day })
+		enc.Encode(forecasts)
+	}
 
-	enc.Encode(forecasts)
 }
 
 //GenerateForecast returns a list of all the days and their prediction
@@ -128,6 +114,8 @@ func GenerateForecast(w http.ResponseWriter, r *http.Request) {
 
 	var currentEntries []model.Forecast
 
+	log.Debugf(ctx, "Forecasts are: \n%v", forecasts)
+
 	log.Infof(ctx, "Querying current entries")
 	keys, err := datastore.NewQuery("Forecast").GetAll(ctx, &currentEntries)
 	if err != nil {
@@ -140,14 +128,16 @@ func GenerateForecast(w http.ResponseWriter, r *http.Request) {
 		if err := datastore.Delete(ctx, k); err != nil {
 			log.Errorf(ctx, "Error deleting the entry: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 	}
+	log.Infof(ctx, "All records deleted.")
 
 	log.Infof(ctx, "Inserting records")
 	for _, f := range forecasts {
 		k := datastore.NewIncompleteKey(ctx, "Forecast", nil)
 		if k, err = datastore.Put(ctx, k, &f); err != nil {
-			log.Errorf(ctx, "Inserting forecast: %v", err)
+			log.Errorf(ctx, "Error inserting forecast: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

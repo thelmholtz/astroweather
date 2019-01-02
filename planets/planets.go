@@ -32,15 +32,19 @@ func Aligned(day int) bool {
 
 }
 
-//RadiallyAligned returns true if the planets are both colinear among both each other and the sun (Point at origin) at the given day.
-//New version works with points instead of angles to allow some tolerance in the definition of a line.
+//RadiallyAligned returns true if the planets are both colinear among both each other and the sun (origin) at the given day.
 func RadiallyAligned(day int) bool {
 
 	planets := PlanetarySystem()
 
-	locations := locations(planets, day)
-
-	return geometry.Point{X: 0.0, Y: 0.0}.CollinearTo(locations...)
+	for _, p := range planets {
+		for _, other := range planets {
+			if p != other && p.locationRadial(day).AxisAngle() != other.locationRadial(day).AxisAngle() {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 //SunInsideTriangle returns true if the sun is inside the triangle formed by the planets

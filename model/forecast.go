@@ -17,7 +17,7 @@ func (f *Forecast) Predict() except.E {
 
 	switch {
 	case f.Day < 0:
-		err := except.New("VALUE", "El dia tiene que ser positivo")
+		err := except.New("VALUE", "Day must be positive")
 		return err
 	case isDry(f.Day):
 		f.Weather = "drought"
