@@ -1,12 +1,10 @@
 package floats
 
-import "math"
-
 //AllEqual takes an array of floats and a tolerance for comparison, and returns true if all members of the array are equal under that tolerance.
 func AllEqual(floats []float64, tolerance float64) bool {
 	ref := floats[0]
 	for _, f := range floats {
-		deviation := math.Abs(ref / f)
+		deviation := f / ref
 		if deviation < 1.0-tolerance || deviation > 1.0+tolerance {
 			return false
 		}

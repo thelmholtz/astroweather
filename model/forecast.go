@@ -9,6 +9,7 @@ import (
 type Forecast struct {
 	Day     int    `bson:"day" json:"day"`
 	Weather string `bson:"weather" json:"weather"`
+	Peak    bool   `bson:"peak" json:"peak,omitempty"`
 }
 
 //Predict sets the Weather for this Day with an accurate prediction. Overwrites any previous value.
@@ -26,6 +27,9 @@ func (f *Forecast) Predict() except.E {
 		return nil
 	case isRaining(f.Day):
 		f.Weather = "rain"
+		if planets.MaxPerimeter(f.Day) {
+			f.Peak = true
+		}
 		return nil
 	default:
 		f.Weather = "normal"

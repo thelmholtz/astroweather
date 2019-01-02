@@ -12,3 +12,15 @@ func TestIsSunInside(t *testing.T) {
 		t.Fatalf("10")
 	}
 }
+
+func TestRadiallyAligned(t *testing.T) {
+	if planets.RadiallyAligned(19) {
+		t.Fatalf("19")
+	}
+}
+
+func TestAligned(t *testing.T) {
+	if planets.Aligned(19) {
+		t.Fatalf("19")
+	}
+}

@@ -8,6 +8,7 @@ import (
 	"google.golang.org/appengine/log"
 
 	"net/http"
+	"sort"
 	"strconv"
 
 	"github.com/thelmholtz/astroweather/model"
@@ -16,58 +17,85 @@ import (
 
 func main() {
 	http.HandleFunc("/", Index)
-	http.HandleFunc("/predict", GenerateForecast)
-	http.HandleFunc("/clima", GetForecast)
+	http.HandleFunc("/forecast/predict", GenerateForecast)
+	http.HandleFunc("/forecast", GetForecast)
 	appengine.Main()
 }
 
 //Index is a quick description of the service
 func Index(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("This is the home screen. Try issuing a GET to /predict to generate predictions, or /clima?dia={int} to get the prediction for a given day"))
+	w.Write([]byte(`Welcome to the FBV interplanetary weather forecast service.`))
 }
 
 //GetForecast is the handler function for `clima` endpoint.
 func GetForecast(w http.ResponseWriter, r *http.Request) {
-
 	enc := json.NewEncoder(w)
 	ctx := appengine.NewContext(r)
 
-	day, err := strconv.Atoi(r.FormValue("dia"))
-	if err != nil {
-		log.Errorf(ctx, "Day was not castable to int: %v", err)
-		w.WriteHeader(http.StatusBadRequest)
-		enc.Encode(except.New("TYPE", "Day must be a number"))
-	}
+	var atomic bool
 
-	q := datastore.NewQuery("Forecast").Filter("Day =", normalizeDay(day)).Order("Day").Limit(1)
+	q := datastore.NewQuery("Forecast")
+
+	day, err := strconv.Atoi(r.FormValue("day"))
+
+	//We change modify the query depending on the present parameters
+	if err == nil {
+		atomic = true
+		log.Debugf(ctx, "QueryType = DAY")
+		q.Filter("Day =", normalizeDay(day)).Order("Day").Limit(1)
+		log.Debugf(ctx, "Query is:%v", q)
+	} else if weather := r.FormValue("weather"); weather != "" {
+		log.Debugf(ctx, "QueryType = WEATHER")
+		q = datastore.NewQuery("Forecast").Filter("Weather =", weather)
+		log.Debugf(ctx, "Query is:%v", q)
+	} else {
+		log.Debugf(ctx, "QueryType = ALL")
+		q.Order("Day")
+		log.Debugf(ctx, "Query is:%v", q)
+	}
 
 	var forecasts []model.Forecast
 
 	log.Infof(ctx, "Getting Forecast")
 
 	if _, err := q.GetAll(ctx, &forecasts); err != nil {
+		/*
+			//If the query fails, either because there's no records or no infrastructure, we fallback to calculating each day per request.
+			f := new(model.Forecast)
+			f.Day = day
 
-		//If the query fails, either because there's no records or no infrastructure, we fallback to calculating each day per request.
-		f := new(model.Forecast)
-		f.Day = day
+			log.Errorf(ctx, "Query failed for day: %v, Error: %v", f.Day, err)
 
-		log.Errorf(ctx, "Query failed for day: %v, Error: %v", f.Day, err)
+			if err := forecasts[0].Predict(); err != nil {
+				log.Errorf(ctx, "Error making fallback predictions: %v", err)
+				w.WriteHeader(http.StatusBadRequest)
+				enc.Encode(err)
+				return
+			}
 
-		if err := forecasts[0].Predict(); err != nil {
-			log.Errorf(ctx, "Error making fallback predictions: %v", err)
-			w.WriteHeader(http.StatusBadRequest)
-			enc.Encode(err)
-			return
-		}
+			forecasts := make([]model.Forecast, 1)
+			forecasts[0] = *f
+		*/
+		log.Errorf(ctx, "Query blew up %v", err)
+		w.WriteHeader(http.StatusBadGateway)
 
-		forecasts := make([]model.Forecast, 1)
-		forecasts[0] = *f
+		return
 	}
+
 	log.Infof(ctx, "Forecasts: %v", forecasts)
 
-	forecasts[0].Day = day
+	//If the query was by day, we return the atomic result instead of a list of len 1. We also change the queried day to match the one in the DB (as we only store 360 records)
+	if atomic {
+		forecasts[0].Day = day
+		enc.Encode(forecasts[0])
 
-	enc.Encode(forecasts[0])
+		return
+	}
+
+	//I couldn't order by day using the gcloud datastore SDK whenever the filter was by weather; so we sort it manually here:
+	sort.Slice(forecasts, func(i, j int) bool { return forecasts[i].Day < forecasts[j].Day })
+
+	enc.Encode(forecasts)
 }
 
 //GenerateForecast returns a list of all the days and their prediction
@@ -79,10 +107,11 @@ func GenerateForecast(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		enc.Encode(except.New("VERB", "Method not allowed"))
-		return
+		//TODO return
 	}
 
-	forecasts := make([]model.Forecast, 360) //Simula el clima para los proximos 10 años Ferengienses (duran 360 dias)
+	//We get the forecast for days 0 to 359, and insert only these, as the weather is periodic at 360 days.
+	forecasts := make([]model.Forecast, 360)
 
 	log.Infof(ctx, "Generating predictions")
 	for i := range forecasts {

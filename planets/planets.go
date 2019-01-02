@@ -28,10 +28,48 @@ func RadiallyAligned(day int) bool {
 
 	for _, p := range planets {
 		for _, other := range planets {
-			if p != other && p.locationRadial(day).AxisAngle() != other.locationRadial(day).AxisAngle() {
+			areDifferent := p != other
+			angle1 := p.locationRadial(day).AxisAngle()
+			angle2 := other.locationRadial(day).AxisAngle()
+			haveDifferentAngle := angle1 != angle2
+			if areDifferent && haveDifferentAngle {
 				return false
 			}
 		}
+	}
+	return true
+}
+
+//getPerimeter returns the triangle's perimeter for a given day
+func getPerimeter(day int) float64 {
+	locations := locations(PlanetarySystem(), day)
+	var perimeter float64
+	for i, l := range locations {
+		if i+1 < len(locations) {
+			perimeter += l.DistanceTo(locations[i+1])
+		} else {
+			perimeter += l.DistanceTo(locations[0])
+		}
+	}
+	return perimeter
+}
+
+//MaxPerimeter returns true if the day has the highest perimeter for the year
+func MaxPerimeter(day int) bool {
+	perimeters := make([]float64, 360)
+	for d := 0; d < 360; d++ {
+		perimeters[d] = getPerimeter(d)
+	}
+	max := perimeters[0]
+	index := 0
+	for i, v := range perimeters {
+		if v > max {
+			max = v
+			index = i
+		}
+	}
+	if day != index {
+		return false
 	}
 	return true
 }
