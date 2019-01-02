@@ -20,7 +20,7 @@ func TestRadiallyAligned(t *testing.T) {
 }
 
 func TestAligned(t *testing.T) {
-	if planets.Aligned(19) {
+	if !planets.Aligned(19) {
 		t.Fatalf("19")
 	}
 }

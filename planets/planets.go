@@ -21,37 +21,44 @@ func PlanetarySystem() []Planet {
 	return planets
 }
 
-//RadiallyAligned returns true if the planets are both colinear among both each other and the sun (origin) at the given day
+//Aligned returns true if the planets are colinear among each other at the given day
+func Aligned(day int) bool {
+
+	planets := PlanetarySystem()
+
+	locations := locations(planets, day)
+
+	return locations[0].CollinearTo(locations[1:]...)
+
+}
+
+//RadiallyAligned returns true if the planets are both colinear among both each other and the sun (Point at origin) at the given day.
+//New version works with points instead of angles to allow some tolerance in the definition of a line.
 func RadiallyAligned(day int) bool {
 
 	planets := PlanetarySystem()
 
-	for _, p := range planets {
-		for _, other := range planets {
-			areDifferent := p != other
-			angle1 := p.locationRadial(day).AxisAngle()
-			angle2 := other.locationRadial(day).AxisAngle()
-			haveDifferentAngle := angle1 != angle2
-			if areDifferent && haveDifferentAngle {
-				return false
-			}
-		}
-	}
-	return true
+	locations := locations(planets, day)
+
+	return geometry.Point{X: 0.0, Y: 0.0}.CollinearTo(locations...)
 }
 
-//getPerimeter returns the triangle's perimeter for a given day
-func getPerimeter(day int) float64 {
-	locations := locations(PlanetarySystem(), day)
-	var perimeter float64
-	for i, l := range locations {
-		if i+1 < len(locations) {
-			perimeter += l.DistanceTo(locations[i+1])
-		} else {
-			perimeter += l.DistanceTo(locations[0])
-		}
+//SunInsideTriangle returns true if the sun is inside the triangle formed by the planets
+//Panics if length of planets is other than 3; as no handler has been implemented for n-sided polygons.
+func SunInsideTriangle(day int) bool {
+
+	planets := PlanetarySystem()
+
+	if len(planets) != 3 {
+		panic("Either we have new neighbours and this method should be reimplemented for n-sided polygoons; or something went TERRIBLY wrong with our solar system and we should take a minute of mourning")
 	}
-	return perimeter
+
+	locations := locations(planets, day)
+
+	origin := geometry.Point{X: 0.0, Y: 0.0}
+
+	ret := origin.InsidePolygon(locations...)
+	return ret
 }
 
 //MaxPerimeter returns true if the day has the highest perimeter for the year
@@ -74,35 +81,6 @@ func MaxPerimeter(day int) bool {
 	return true
 }
 
-//Aligned returns true if the planets are colinear among each other at the given day
-func Aligned(day int) bool {
-
-	planets := PlanetarySystem()
-
-	locations := locations(planets, day)
-
-	return locations[0].CollinearTo(locations[1:]...)
-
-}
-
-//SunInsideTriangle returns true if the sun is inside the triangle formed by the planets
-//Panics if length of planets is other than 3; as no handler has been implemented for n-sided polygons.
-func SunInsideTriangle(day int) bool {
-
-	planets := PlanetarySystem()
-
-	if len(planets) != 3 {
-		panic("Either we have new neighbours and this method should be reimplemented for n-sided polygoons; or something went TERRIBLY wrong with our solar system and we should take a minute of mourning")
-	}
-
-	locations := locations(planets, day)
-
-	origin := geometry.Point{X: 0.0, Y: 0.0}
-
-	ret := origin.InsidePolygon(locations...)
-	return ret
-}
-
 //location returns a planet location's Polar coordinates. They are assumed to be on position w=0 on day 0.
 func (planet Planet) locationRadial(day int) geometry.Polar {
 	return geometry.Polar{A: planet.W * day, R: planet.R}
@@ -123,4 +101,18 @@ func locations(planets []Planet, day int) []geometry.Point {
 
 	return locations
 
+}
+
+//getPerimeter returns the triangle's perimeter for a given day
+func getPerimeter(day int) float64 {
+	locations := locations(PlanetarySystem(), day)
+	var perimeter float64
+	for i, l := range locations {
+		if i+1 < len(locations) {
+			perimeter += l.DistanceTo(locations[i+1])
+		} else {
+			perimeter += l.DistanceTo(locations[0])
+		}
+	}
+	return perimeter
 }
