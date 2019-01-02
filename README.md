@@ -8,6 +8,7 @@ This is a REST service to tell them how the weather is gonna be a given day; to 
 To run this program, you need a working installation of Go and Gcloud CLI, and an initialized appengine project to make the deployment. With those requirements, you should be able to run your own version of the service with:
 
 `git checkout github.com/thelmholtz/astroweather`
+
 `gcloud app deploy`
 
 ## Try it
