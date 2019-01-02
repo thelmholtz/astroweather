@@ -24,17 +24,24 @@ func main() {
 
 //Index is a quick description of the service
 func Index(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Write([]byte(`
-	<h1
+	<!DOCTYPE HTML5>
+	<head></head>
+	<body>
+	<h1>
 		Welcome to the FBV interplanetary weather forecast service.
 	</h1>
 	<div>
-		To check the whole forecasts for this year, try issuing a request to https://astroweather.appspot.com/forecast .
-		To query a given day, you can play with the query parameter of this link: https://astroweather.appspot.com/forecast?day=335 .
-		To query them by a given weather, you may use: https://astroweather.appspot.com/forecast?weather=drought . Currently known weather values are 'drought', 'optimal', 'rain' and 'normal'.
-		If you want to delete all entries and run the simulation again send a POST to /forecast/predict.
-		Please don't use it to DoS this service, three civilizations depend on it.
+		<p>To check the whole forecasts for this year, try issuing a request to <a href=https://astroweather.appspot.com/forecast>/forecast</a>.</p>
+		<p>To query a given day, you can play with the query parameter of this link: <a href=https://astroweather.appspot.com/forecast?day=335>/forecast?day=${day}</a>.</p>
+		<p>To query them by a given weather, you may use: <a href=https://astroweather.appspot.com/forecast?weather=optimal>/forecast?weather=${weather}</a>.
+		Currently known weather values are 'drought', 'optimal', 'rain' and 'normal'.</p>
+		<p>If you want to delete all entries and run the simulation again send a POST to /forecast/predict.
+		Please don't use that knowledge to DoS this service, three civilizations depend on it.</p>
+		<p>Happy forecasting.</p>
 	</div>
+	</body>
 	`))
 }
 
