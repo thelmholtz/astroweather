@@ -24,7 +24,18 @@ func main() {
 
 //Index is a quick description of the service
 func Index(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(`Welcome to the FBV interplanetary weather forecast service.`))
+	w.Write([]byte(`
+	<h1
+		Welcome to the FBV interplanetary weather forecast service.
+	</h1>
+	<div>
+		To check the whole forecasts for this year, try issuing a request to https://astroweather.appspot.com/forecast .
+		To query a given day, you can play with the query parameter of this link: https://astroweather.appspot.com/forecast?day=335 .
+		To query them by a given weather, you may use: https://astroweather.appspot.com/forecast?weather=drought . Currently known weather values are 'drought', 'optimal', 'rain' and 'normal'.
+		If you want to delete all entries and run the simulation again send a POST to /forecast/predict.
+		Please don't use it to DoS this service, three civilizations depend on it.
+	</div>
+	`))
 }
 
 //GetForecast is the handler function for `clima` endpoint.
@@ -33,6 +44,7 @@ func GetForecast(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
 
 	var atomic bool
+	var forecasts []model.Forecast
 
 	q := datastore.NewQuery("Forecast")
 
@@ -41,20 +53,12 @@ func GetForecast(w http.ResponseWriter, r *http.Request) {
 	//We change modify the query depending on the present parameters
 	if err == nil {
 		atomic = true
-		log.Debugf(ctx, "QueryType = DAY")
-		q.Filter("Day =", normalizeDay(day)).Order("Day").Limit(1)
-		log.Debugf(ctx, "Query is:%v", q)
+		q = q.Filter("Day =", normalizeDay(day)).Order("Day").Limit(1)
 	} else if weather := r.FormValue("weather"); weather != "" {
-		log.Debugf(ctx, "QueryType = WEATHER")
-		q = datastore.NewQuery("Forecast").Filter("Weather =", weather)
-		log.Debugf(ctx, "Query is:%v", q)
+		q = q.Filter("Weather =", weather)
 	} else {
-		log.Debugf(ctx, "QueryType = ALL")
-		q.Order("Day")
-		log.Debugf(ctx, "Query is:%v", q)
+		q = q.Order("Day")
 	}
-
-	var forecasts []model.Forecast
 
 	log.Infof(ctx, "Getting Forecast")
 
@@ -93,7 +97,7 @@ func GenerateForecast(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		w.WriteHeader(http.StatusMethodNotAllowed)
 		enc.Encode(except.New("VERB", "Method not allowed"))
-		//TODO return
+		return
 	}
 
 	//We get the forecast for days 0 to 359, and insert only these, as the weather is periodic at 360 days.
@@ -152,7 +156,7 @@ func GenerateForecast(w http.ResponseWriter, r *http.Request) {
 //For instance, negative values can be queried with consistent results.
 func normalizeDay(i int) int {
 	for i < 0 {
-		return (360 + (i % 360)) % 360 //Go's implementation of modulo yields negative numbers if the operand is negative; we need to normalize this again after shifting them from the range (-359, 0) to (0, 359)
+		return (360 + (i % 360)) % 360 //Go's implementation of % yields negative numbers if the operand is negative; we need to normalize this again after shifting them from the range (-359, 0) to (0, 359)
 	}
 	return i % 360
 }
